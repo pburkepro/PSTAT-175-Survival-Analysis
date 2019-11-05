@@ -1,0 +1,101 @@
+---
+title: "PSTAT 174 Final Project"
+author: "Sooryun Yu"
+date: "10/22/2019"
+output: pdf_document
+---
+
+```{r}
+library(survival)
+emp <- read.csv('Employee_Data.csv')
+
+#event is attrition
+emp$event = with(emp,ifelse(Attrition=="Yes", 1, 0))
+time <- as.vector(emp$YearsAtCompany)
+event <- as.vector(emp$event)
+emp.surv <- Surv(time, event)
+emp.fit <- survfit(emp.surv~1)
+plot(emp.fit)
+
+#KM by job satisfaction scores
+emp.satisfaction <- survfit(emp.surv ~ emp$JobSatisfaction)
+plot(emp.satisfaction, col = c('blue', 'red', 'darkgreen', 'orange'), 
+     mark.time = T, mark = 18)
+legend("topright", legend = c('1', '2', '3', '4'), 
+       col = c('blue', 'red', 'darkgreen', 'orange'),
+       pch = rep(18,2))
+```
+
+```{r}
+#long rank test
+survdiff(emp.surv ~ JobSatisfaction, data = emp)
+
+#cox ph
+emp_cox <- coxph(emp.surv ~ JobSatisfaction, data = emp)
+emp_cox
+
+#confint 
+confint(emp_cox, level = 0.95)
+
+#likelihood ratio rest, explain why we chose these covariates
+emp_cox2 <- coxph(emp.surv ~ JobSatisfaction + Education + DistanceFromHome + Gender + OverTime + RelationshipSatisfaction, data = emp)
+
+emp_cox3 <- coxph(emp.surv ~ Education + DistanceFromHome + Gender + OverTime + RelationshipSatisfaction, data = emp)
+
+lrt <- 2*(emp_cox2$loglik[2]-emp_cox3$loglik[2])
+pchisq(lrt, df=1, lower.tail=FALSE)
+
+#cox.zph
+cox.zph(emp_cox)
+```
+
+```{r}
+emp$EmployeeCount <- NULL
+emp$StandardHours <- NULL
+emp$Over18 <- NULL
+emp$MonthlyRate <- NULL #dont know what this variable is, had pvalue < 0.05 before in summary though
+summary(lm(event ~ ., data = emp))
+
+
+#make age categorical 
+emp$AgeCategory <- cut(emp$Age, breaks = c(18, 20, 30, 40, 50, 60 ), labels = c("18-20", "21-30", "31-40", "41-50", "51-60"))
+
+#KM by age category
+emp.age <- survfit(emp.surv ~ emp$AgeCategory)
+plot(emp.age, col = c('blue', 'red', 'darkgreen', 'orange', "purple"), 
+     mark.time = T, mark = 18)
+legend("topright", legend = c("18-20", "21-30", "31-40", "41-50", "51-60"), 
+       col = c('blue', 'red', 'darkgreen', 'orange', "purple"),
+       pch = rep(18,2))
+
+#long rank test
+survdiff(emp.surv ~ AgeCategory, data = emp)
+
+#cox ph
+emp_age_cox <- coxph(emp.surv ~ AgeCategory, data = emp)
+emp_age_cox
+
+#confint 
+confint(emp_cox, level = 0.95)
+
+#likelihood ratio rest, explain why we chose these covariates
+emp_age_cox2 <- coxph(emp.surv ~ AgeCategory + JobSatisfaction + Education + DistanceFromHome + Gender + OverTime + RelationshipSatisfaction, data = emp)
+
+emp_age_cox3 <- coxph(emp.surv ~ AgeCategory + JobSatisfaction + Education + DistanceFromHome + Gender + OverTime + RelationshipSatisfaction, data = emp)
+
+lrt <- 2*(emp_age_cox2$loglik[2]-emp_age_cox3$loglik[2])
+pchisq(lrt, df=1, lower.tail=FALSE)
+
+#cox.zph
+cox.zph(emp_age_cox)
+
+```
+
+
+
+
+
+
+
+
+
