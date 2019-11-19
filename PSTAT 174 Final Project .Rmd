@@ -15,15 +15,35 @@ time <- as.vector(emp$YearsAtCompany)
 event <- as.vector(emp$event)
 emp.surv <- Surv(time, event)
 emp.fit <- survfit(emp.surv~1)
-plot(emp.fit)
+plot(emp.fit, main = "Kaplan-Meier Curves for Years until Attrition",
+     xlab = "Time in Years until Attrition", ylab = "Survival Probability", 
+     col = c('blue', 'red', 'red'))
 
 #KM by job satisfaction scores
 emp.satisfaction <- survfit(emp.surv ~ emp$JobSatisfaction)
 plot(emp.satisfaction, col = c('blue', 'red', 'darkgreen', 'orange'), 
-     mark.time = T, mark = 18)
-legend("topright", legend = c('1', '2', '3', '4'), 
+     mark.time = F, mark = 18, main = 'KM Curves for Job Satisfaction Level in Employee Attrition',
+     xlab = 'Time in Years', ylab = 'Survival Probability')
+legend("topright", legend = c('low', 'medium', 'high', 'very high'), 
        col = c('blue', 'red', 'darkgreen', 'orange'),
        pch = rep(18,2))
+```
+
+```{r}
+summary(emp$Age)
+summary(as.factor(emp$JobSatisfaction))
+summary(as.factor(emp$Education))
+summary(emp$YearsAtCompany)
+quantile(emp$Age)
+
+
+emp$JobSatisfaction <- as.factor(emp$JobSatisfaction)
+emp$Education <- as.factor(emp$Education)
+library(dplyr)
+emp_new <- select(emp, Age, JobSatisfaction, Education, Attrition, YearsAtCompany)
+summary(emp_new)
+
+
 ```
 
 ```{r}
@@ -58,15 +78,16 @@ summary(lm(event ~ ., data = emp))
 
 
 #make age categorical 
-emp$AgeCategory <- cut(emp$Age, breaks = c(18, 20, 30, 40, 50, 60 ), labels = c("18-20", "21-30", "31-40", "41-50", "51-60"))
+emp$AgeCategory <- cut(emp$Age, breaks = c(18, 30, 40, 50, 60 ), labels = c("18-30", "31-40", "41-50", "51-60"))
 
 #KM by age category
 emp.age <- survfit(emp.surv ~ emp$AgeCategory)
-plot(emp.age, col = c('blue', 'red', 'darkgreen', 'orange', "purple"), 
-     mark.time = T, mark = 18)
-legend("topright", legend = c("18-20", "21-30", "31-40", "41-50", "51-60"), 
-       col = c('blue', 'red', 'darkgreen', 'orange', "purple"),
-       pch = rep(18,2))
+plot(emp.age, col = c('blue', 'red', 'darkgreen', 'orange'), 
+     mark.time = F, mark = 18, main = "KM Curves for Age Category in Employee Attrition",
+     xlab = "Time in Years", ylab = "Survival Probability")
+legend("topright", legend = c("18-30", "31-40", "41-50", "51-60"), 
+       col = c('blue', 'red', 'darkgreen', 'orange'),
+       pch = rep(18,2), cex = 0.75)
 
 #long rank test
 survdiff(emp.surv ~ AgeCategory, data = emp)
@@ -89,13 +110,67 @@ pchisq(lrt, df=1, lower.tail=FALSE)
 #cox.zph
 cox.zph(emp_age_cox)
 
+pchisq(2.120,1, lower.tail = F)
+
+
 ```
 
 
+```{r}
+emp.edu <- survfit(emp.surv ~ emp$Education)
+plot(emp.edu, col = c('blue', 'red', 'darkgreen', 'orange', "purple"), 
+     mark.time = F, mark = 18, main = "KM Curves for Education in Employee Attrition",
+     xlab = "Time in Years", ylab = "Survival Probability")
+legend("bottom", legend = c("1: Below College", "2: College", 
+                            "3: Bachelor", "4: Master", "5: Doctor"), 
+       col = c('blue', 'red', 'darkgreen', 'orange', "purple"),
+       pch = rep(18,2), cex = 0.75)
+
+#log rank test
+survdiff(emp.surv ~ Education , data = emp)
+
+```
 
 
+```{r}
+plot(survfit(emp_cox), col = "black", conf.int=FALSE, lty = 5,
+     main = "CoxPH model for JobSatisfaction", xlab = "Time in Years", ylab = "Survival Probability")
 
+levels(emp$JobSatisfaction) <- c("Low", "Medium", "High", "Very High")
+lines(survfit(emp_cox, newdata =  subset(emp, emp$JobSatisfaction==1)) , col = "blue")
+lines(survfit(emp_cox, newdata =  subset(emp, emp$JobSatisfaction==2)) , col = "red")
+lines(survfit(emp_cox, newdata =  subset(emp, emp$JobSatisfaction==3)) , col = "darkgreen")
+lines(survfit(emp_cox, newdata =  subset(emp, emp$JobSatisfaction==4)) , col = "orange")
+legend("topright", legend = c('low', 'medium', 'high', 'very high'), 
+       col = c('blue', 'red', 'darkgreen', 'orange'),
+       pch = rep(18,2), cex = 0.75)
+```
 
+```{r}
+plot(survfit(emp_age_cox), col = "black", conf.int=FALSE, lty = 5,
+     main = "CoxPH model for Age", xlab = "Time in Years", ylab = "Survival Probability")
 
+levels(emp$AgeCategory) <- c("18-30", "31-40", "41-50", "51-60")
+lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="18-30")) , col = "blue")
+lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="31-40")) , col = "red")
+lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="41-50")) , col = "darkgreen")
+lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="51-60")) , col = "orange")
+legend("topright", legend = c("18-30", "31-40", "41-50", "51-60"), 
+       col = c('blue', 'red', 'darkgreen', 'orange' ),
+       pch = rep(18,2), cex = 0.75)
+```
 
+```{r}
+plot(survfit(emp_age_cox), col = "black", conf.int=FALSE, lty = 5,
+     main = "CoxPH model for Age", xlab = "Time in Years", ylab = "Survival Probability")
+
+levels(emp$AgeCategory) <- c("18-30", "31-40", "41-50", "51-60")
+lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="18-30")) , col = "blue")
+lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="31-40")) , col = "red")
+lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="41-50")) , col = "darkgreen")
+lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="51-60")) , col = "orange")
+legend("topright", legend = c("18-30", "31-40", "41-50", "51-60"), 
+       col = c('blue', 'red', 'darkgreen', 'orange' ),
+       pch = rep(18,2), cex = 0.75)
+```
 
