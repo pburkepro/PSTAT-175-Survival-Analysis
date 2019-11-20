@@ -78,7 +78,7 @@ summary(lm(event ~ ., data = emp))
 
 
 #make age categorical 
-emp$AgeCategory <- cut(emp$Age, breaks = c(18, 30, 40, 50, 60 ), labels = c("18-30", "31-40", "41-50", "51-60"))
+emp$AgeCategory <- cut(emp$Age, breaks = c(17, 30, 40, 50, 60 ), labels = c("18-30", "31-40", "41-50", "51-60"))
 
 #KM by age category
 emp.age <- survfit(emp.surv ~ emp$AgeCategory)
@@ -128,7 +128,8 @@ legend("bottom", legend = c("1: Below College", "2: College",
 
 #log rank test
 survdiff(emp.surv ~ Education , data = emp)
-
+#cox ph
+emp_edu_cox <- coxph(emp.surv ~ Education, data = emp)
 ```
 
 
@@ -161,16 +162,25 @@ legend("topright", legend = c("18-30", "31-40", "41-50", "51-60"),
 ```
 
 ```{r}
-plot(survfit(emp_age_cox), col = "black", conf.int=FALSE, lty = 5,
-     main = "CoxPH model for Age", xlab = "Time in Years", ylab = "Survival Probability")
+plot(survfit(emp_edu_cox), col = "black", conf.int=FALSE, lty = 5,
+     main = "CoxPH model for Education", xlab = "Time in Years", ylab = "Survival Probability")
 
-levels(emp$AgeCategory) <- c("18-30", "31-40", "41-50", "51-60")
-lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="18-30")) , col = "blue")
-lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="31-40")) , col = "red")
-lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="41-50")) , col = "darkgreen")
-lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="51-60")) , col = "orange")
-legend("topright", legend = c("18-30", "31-40", "41-50", "51-60"), 
-       col = c('blue', 'red', 'darkgreen', 'orange' ),
+levels(emp$AgeCategory) <- c("Below College", "College", "Bachelor", "Master", 'Doctor')
+lines(survfit(emp_edu_cox, newdata =  subset(emp, emp$Education=="Below College")) , col = "blue")
+lines(survfit(emp_edu_cox, newdata =  subset(emp, emp$Education=="College")) , col = "red")
+lines(survfit(emp_edu_cox, newdata =  subset(emp, emp$Education=="Bachelor")) , col = "darkgreen")
+lines(survfit(emp_edu_cox, newdata =  subset(emp, emp$Education=="Master")) , col = "orange")
+lines(survfit(emp.edu, newdata =  subset(emp, emp$Education=="Doctor")) , col = "purple")
+legend("topright", legend = c("1: Below College", "2: College", 
+                            "3: Bachelor", "4: Master", "5: Doctor"), 
+       col = c('blue', 'red', 'darkgreen', 'orange', 'purple' ),
        pch = rep(18,2), cex = 0.75)
 ```
 
+
+```{r}
+empcox <- coxph(emp.surv ~ Education + JobSatisfaction + AgeCategory, data = emp)
+step(empcox, direction = "forward")
+
+
+```
