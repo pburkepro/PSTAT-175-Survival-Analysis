@@ -22,8 +22,8 @@ plot(emp.fit, main = "Kaplan-Meier Curves for Years until Attrition",
 #KM by job satisfaction scores
 emp.satisfaction <- survfit(emp.surv ~ emp$JobSatisfaction)
 plot(emp.satisfaction, col = c('blue', 'red', 'darkgreen', 'orange'), 
-     mark.time = F, mark = 18, main = 'KM Curves for Job Satisfaction Level in Employee Attrition',
-     xlab = 'Time in Years', ylab = 'Survival Probability')
+     mark.time = F, mark = 18, main = 'KM Curves for Job Satisfaction Level in Employee
+     Attrition',xlab = 'Time in Years', ylab = 'Survival Probability')
 legend("topright", legend = c('low', 'medium', 'high', 'very high'), 
        col = c('blue', 'red', 'darkgreen', 'orange'),
        pch = rep(18,2))
@@ -42,28 +42,26 @@ emp$Education <- as.factor(emp$Education)
 library(dplyr)
 emp_new <- select(emp, Age, JobSatisfaction, Education, Attrition, YearsAtCompany)
 summary(emp_new)
-
-
 ```
 
 ```{r}
-#long rank test
+#long rank test for job satisfaction
 survdiff(emp.surv ~ JobSatisfaction, data = emp)
 
-#cox ph
+#cox ph for job satisfaction
 emp_cox <- coxph(emp.surv ~ JobSatisfaction, data = emp)
 emp_cox
 
-#confint 
+#confint for job satisfaction
 confint(emp_cox, level = 0.95)
 
 #likelihood ratio rest, explain why we chose these covariates
-emp_cox2 <- coxph(emp.surv ~ JobSatisfaction + Education + DistanceFromHome + Gender + OverTime + RelationshipSatisfaction, data = emp)
+#emp_cox2 <- coxph(emp.surv ~ JobSatisfaction + Education + AgeCategory, data = emp)
 
-emp_cox3 <- coxph(emp.surv ~ Education + DistanceFromHome + Gender + OverTime + RelationshipSatisfaction, data = emp)
+#emp_cox3 <- coxph(emp.surv ~ Education + AgeCategory, data = emp)
 
-lrt <- 2*(emp_cox2$loglik[2]-emp_cox3$loglik[2])
-pchisq(lrt, df=1, lower.tail=FALSE)
+#lrt <- 2*(emp_cox2$loglik[2]-emp_cox3$loglik[2])
+#pchisq(lrt, df=1, lower.tail=FALSE)
 
 #cox.zph
 cox.zph(emp_cox)
@@ -73,11 +71,12 @@ cox.zph(emp_cox)
 emp$EmployeeCount <- NULL
 emp$StandardHours <- NULL
 emp$Over18 <- NULL
-emp$MonthlyRate <- NULL #dont know what this variable is, had pvalue < 0.05 before in summary though
+emp$MonthlyRate <- NULL #dont know what these variables mean
+
 summary(lm(event ~ ., data = emp))
 
 
-#make age categorical 
+#make age categorical variable
 emp$AgeCategory <- cut(emp$Age, breaks = c(17, 30, 40, 50, 60 ), labels = c("18-30", "31-40", "41-50", "51-60"))
 
 #KM by age category
@@ -89,20 +88,20 @@ legend("topright", legend = c("18-30", "31-40", "41-50", "51-60"),
        col = c('blue', 'red', 'darkgreen', 'orange'),
        pch = rep(18,2), cex = 0.75)
 
-#long rank test
+#long rank test for age
 survdiff(emp.surv ~ AgeCategory, data = emp)
 
-#cox ph
+#cox ph for age
 emp_age_cox <- coxph(emp.surv ~ AgeCategory, data = emp)
 emp_age_cox
 
-#confint 
-confint(emp_cox, level = 0.95)
+#confint for age
+confint(emp_age_cox, level = 0.95)
 
-#likelihood ratio rest, explain why we chose these covariates
-emp_age_cox2 <- coxph(emp.surv ~ AgeCategory + JobSatisfaction + Education + DistanceFromHome + Gender + OverTime + RelationshipSatisfaction, data = emp)
+#likelihood ratio test for age
+emp_age_cox2 <- coxph(emp.surv ~ AgeCategory + JobSatisfaction + Education, data = emp)
 
-emp_age_cox3 <- coxph(emp.surv ~ AgeCategory + JobSatisfaction + Education + DistanceFromHome + Gender + OverTime + RelationshipSatisfaction, data = emp)
+emp_age_cox3 <- coxph(emp.surv ~ JobSatisfaction + Education, data = emp)
 
 lrt <- 2*(emp_age_cox2$loglik[2]-emp_age_cox3$loglik[2])
 pchisq(lrt, df=1, lower.tail=FALSE)
@@ -111,13 +110,12 @@ pchisq(lrt, df=1, lower.tail=FALSE)
 cox.zph(emp_age_cox)
 
 pchisq(2.120,1, lower.tail = F)
-
-
 ```
-
 
 ```{r}
 emp.edu <- survfit(emp.surv ~ emp$Education)
+
+#KM for education
 plot(emp.edu, col = c('blue', 'red', 'darkgreen', 'orange', "purple"), 
      mark.time = F, mark = 18, main = "KM Curves for Education in Employee Attrition",
      xlab = "Time in Years", ylab = "Survival Probability")
@@ -126,61 +124,29 @@ legend("bottom", legend = c("1: Below College", "2: College",
        col = c('blue', 'red', 'darkgreen', 'orange', "purple"),
        pch = rep(18,2), cex = 0.75)
 
-#log rank test
+#log rank test for education
 survdiff(emp.surv ~ Education , data = emp)
-#cox ph
+#cox ph for education
 emp_edu_cox <- coxph(emp.surv ~ Education, data = emp)
 ```
 
 
 ```{r}
-plot(survfit(emp_cox), col = "black", conf.int=FALSE, lty = 5,
-     main = "CoxPH model for JobSatisfaction", xlab = "Time in Years", ylab = "Survival Probability")
-
-levels(emp$JobSatisfaction) <- c("Low", "Medium", "High", "Very High")
-lines(survfit(emp_cox, newdata =  subset(emp, emp$JobSatisfaction==1)) , col = "blue")
-lines(survfit(emp_cox, newdata =  subset(emp, emp$JobSatisfaction==2)) , col = "red")
-lines(survfit(emp_cox, newdata =  subset(emp, emp$JobSatisfaction==3)) , col = "darkgreen")
-lines(survfit(emp_cox, newdata =  subset(emp, emp$JobSatisfaction==4)) , col = "orange")
-legend("topright", legend = c('low', 'medium', 'high', 'very high'), 
-       col = c('blue', 'red', 'darkgreen', 'orange'),
-       pch = rep(18,2), cex = 0.75)
-```
-
-```{r}
-plot(survfit(emp_age_cox), col = "black", conf.int=FALSE, lty = 5,
-     main = "CoxPH model for Age", xlab = "Time in Years", ylab = "Survival Probability")
-
-levels(emp$AgeCategory) <- c("18-30", "31-40", "41-50", "51-60")
-lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="18-30")) , col = "blue")
-lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="31-40")) , col = "red")
-lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="41-50")) , col = "darkgreen")
-lines(survfit(emp_age_cox, newdata =  subset(emp, emp$AgeCategory=="51-60")) , col = "orange")
-legend("topright", legend = c("18-30", "31-40", "41-50", "51-60"), 
-       col = c('blue', 'red', 'darkgreen', 'orange' ),
-       pch = rep(18,2), cex = 0.75)
-```
-
-```{r}
-plot(survfit(emp_edu_cox), col = "black", conf.int=FALSE, lty = 5,
-     main = "CoxPH model for Education", xlab = "Time in Years", ylab = "Survival Probability")
-
-levels(emp$AgeCategory) <- c("Below College", "College", "Bachelor", "Master", 'Doctor')
-lines(survfit(emp_edu_cox, newdata =  subset(emp, emp$Education=="Below College")) , col = "blue")
-lines(survfit(emp_edu_cox, newdata =  subset(emp, emp$Education=="College")) , col = "red")
-lines(survfit(emp_edu_cox, newdata =  subset(emp, emp$Education=="Bachelor")) , col = "darkgreen")
-lines(survfit(emp_edu_cox, newdata =  subset(emp, emp$Education=="Master")) , col = "orange")
-lines(survfit(emp.edu, newdata =  subset(emp, emp$Education=="Doctor")) , col = "purple")
-legend("topright", legend = c("1: Below College", "2: College", 
-                            "3: Bachelor", "4: Master", "5: Doctor"), 
-       col = c('blue', 'red', 'darkgreen', 'orange', 'purple' ),
-       pch = rep(18,2), cex = 0.75)
-```
-
-
-```{r}
 empcox <- coxph(emp.surv ~ Education + JobSatisfaction + AgeCategory, data = emp)
+step(empcox, direction = "backward")
 step(empcox, direction = "forward")
-
-
 ```
+
+```{r}
+plot(survfit(emp.surv ~ JobSatisfaction, data = emp), fun = 'cloglog', xlab =
+       "time", ylab = 'log(-log(S))', main = "C-loglog Plot for Job Satisfaction
+     Variable", col = c('blue', 'red', 'darkgreen', 'orange'))
+legend('topleft', c("Low","Medium", 'High', 'Very High'), col = c('blue', 'red','darkgreen', 'orange'), pch = rep(19,2))
+```
+
+
+
+
+
+
+
