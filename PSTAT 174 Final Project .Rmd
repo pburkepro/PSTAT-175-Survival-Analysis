@@ -144,7 +144,10 @@ plot(survfit(emp.surv ~ JobSatisfaction, data = emp), fun = 'cloglog', xlab =
 legend('topleft', c("Low","Medium", 'High', 'Very High'), col = c('blue', 'red','darkgreen', 'orange'), pch = rep(19,2))
 ```
 
-
+```{r}
+strata_cox <- coxph(emp.surv ~ strata(Education) + JobSatisfaction + AgeCategory, data = emp)
+strata_cox
+```
 
 
 
