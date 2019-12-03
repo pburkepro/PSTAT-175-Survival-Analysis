@@ -149,7 +149,10 @@ strata_cox <- coxph(emp.surv ~ strata(Education) + JobSatisfaction + AgeCategory
 strata_cox
 ```
 
-
+```
+loglogistic= survreg(emp.surv ~ Education + JobSatisfaction + AgeCategory, data = emp, dist = "loglogistic")
+plot(loglogistic)
+``
 
 
 
